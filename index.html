@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Editor - Stack Project</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        header {
+            background: #123b70;
+            color: white;
+            padding: 25px 15px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #dbeafe;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+        }
+
+        h2 {
+            color: #123b70;
+            margin-bottom: 18px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #1764c0;
+        }
+
+        button {
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 8px 5px 0 0;
+        }
+
+        .primary {
+            background: #1764c0;
+            color: white;
+        }
+
+        .success {
+            background: #15803d;
+            color: white;
+        }
+
+        .secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: #e0ecff;
+            text-align: center;
+            padding: 18px 8px;
+            border-radius: 10px;
+        }
+
+        .stat h3 {
+            font-size: 25px;
+            color: #123b70;
+            margin-bottom: 5px;
+        }
+
+        .stat p {
+            font-size: 13px;
+        }
+
+        .stack-item {
+            background: #eef4fa;
+            padding: 13px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #1764c0;
+            overflow-wrap: anywhere;
+        }
+
+        .stack-item.top {
+            background: #dbeafe;
+            border-left-color: #15803d;
+        }
+
+        .empty {
+            color: #64748b;
+            padding: 10px 0;
+        }
+
+        .message {
+            display: none;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 550px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>📝 Stack Text Editor</h1>
+    <p>Text editing with Undo and Redo</p>
+</header>
+
+<main class="container">
+
+    <section class="stats">
+        <div class="stat">
+            <h3 id="undoCount">0</h3>
+            <p>Undo States</p>
+        </div>
+
+        <div class="stat">
+            <h3 id="redoCount">0</h3>
+            <p>Redo States</p>
+        </div>
+
+        <div class="stat">
+            <h3 id="wordCount">0</h3>
+            <p>Words</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Text Editor</h2>
+
+        <textarea
+            id="editor"
+            placeholder="Start typing your text here..."
+        ></textarea>
+
+        <br>
+
+        <button class="primary" id="undoButton">↶ Undo</button>
+        <button class="success" id="redoButton">↷ Redo</button>
+        <button class="secondary" id="exampleButton">Load Example</button>
+        <button class="danger" id="clearButton">Clear Text</button>
+
+        <div class="message" id="message" role="status"></div>
+    </section>
+
+    <section class="card">
+        <h2>Undo Stack</h2>
+        <div id="undoStack">
+            <p class="empty">No previous states.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Redo Stack</h2>
+        <div id="redoStack">
+            <p class="empty">No undone states.</p>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>Stack-Based Text Editor | Data Structures Project</p>
+</footer>
+
+<script>
+    const editor = document.getElementById("editor");
+
+    const undoStack = [];
+    const redoStack = [];
+
+    const undoButton = document.getElementById("undoButton");
+    const redoButton = document.getElementById("redoButton");
+    const clearButton = document.getElementById("clearButton");
+    const exampleButton = document.getElementById("exampleButton");
+
+    const undoStackDisplay = document.getElementById("undoStack");
+    const redoStackDisplay = document.getElementById("redoStack");
+
+    const undoCount = document.getElementById("undoCount");
+    const redoCount = document.getElementById("redoCount");
+    const wordCount = document.getElementById("wordCount");
+
+    const message = document.getElementById("message");
+
+    let currentText = "";
+    let typingTimer;
+
+    function showMessage(text) {
+        message.textContent = text;
+        message.style.display = "block";
+    }
+
+    function saveState() {
+        if (editor.value === currentText) {
+            return;
+        }
+
+        undoStack.push(currentText);
+
+        currentText = editor.value;
+
+        // A new edit clears the redo stack.
+        redoStack.length = 0;
+
+        updateDisplay();
+    }
+
+    editor.addEventListener("input", function() {
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(function() {
+            saveState();
+        }, 400);
+    });
+
+    editor.addEventListener("blur", function() {
+        clearTimeout(typingTimer);
+        saveState();
+    });
+
+    undoButton.addEventListener("click", function() {
+        clearTimeout(typingTimer);
+        saveState();
+
+        if (undoStack.length === 0) {
+            showMessage("There is no previous state to undo.");
+            return;
+        }
+
+        // Save the current state before undoing.
+        redoStack.push(editor.value);
+
+        // Retrieve the most recent previous state.
+        editor.value = undoStack.pop();
+
+        currentText = editor.value;
+
+        updateDisplay();
+        showMessage("Last change undone successfully.");
+    });
+
+    redoButton.addEventListener("click", function() {
+        clearTimeout(typingTimer);
+        saveState();
+
+        if (redoStack.length === 0) {
+            showMessage("There is no state to redo.");
+            return;
+        }
+
+        // Retrieve the most recently undone state.
+        undoStack.push(editor.value);
+
+        editor.value = redoStack.pop();
+
+        currentText = editor.value;
+
+        updateDisplay();
+        showMessage("Change restored successfully.");
+    });
+
+    clearButton.addEventListener("click", function() {
+        clearTimeout(typingTimer);
+
+        if (editor.value === "") {
+            showMessage("The editor is already empty.");
+            return;
+        }
+
+        undoStack.push(editor.value);
+
+        editor.value = "";
+        currentText = "";
+
+        redoStack.length = 0;
+
+        updateDisplay();
+        showMessage("Text cleared successfully.");
+    });
+
+    exampleButton.addEventListener("click", function() {
+        clearTimeout(typingTimer);
+
+        undoStack.push(editor.value);
+
+        editor.value = "Welcome to my Stack Text Editor!\n\nThis is an example text. You can edit it, undo changes, and redo them.";
+
+        currentText = editor.value;
+
+        redoStack.length = 0;
+
+        updateDisplay();
+        showMessage("Example text loaded successfully.");
+    });
+
+    function updateDisplay() {
+        undoCount.textContent = undoStack.length;
+        redoCount.textContent = redoStack.length;
+
+        const words = editor.value.trim();
+
+        wordCount.textContent = words
+            ? words.split(/\s+/).length
+            : 0;
+
+        undoButton.disabled = undoStack.length === 0;
+        redoButton.disabled = redoStack.length === 0;
+
+        displayStack(undoStackDisplay, undoStack);
+        displayStack(redoStackDisplay, redoStack);
+    }
+
+    function displayStack(element, stack) {
+        if (stack.length === 0) {
+            element.innerHTML =
+                '<p class="empty">No states available.</p>';
+            return;
+        }
+
+        element.innerHTML = "";
+
+        // Display the most recent state at the top.
+        for (let i = stack.length - 1; i >= 0; i--) {
+            const item = document.createElement("div");
+
+            item.className =
+                i === stack.length - 1
+                    ? "stack-item top"
+                    : "stack-item";
+
+            const preview = stack[i] || "(Empty text)";
+
+            item.textContent =
+                (i === stack.length - 1 ? "TOP: " : "") +
+                preview.substring(0, 100);
+
+            element.appendChild(item);
+        }
+    }
+
+    updateDisplay();
+</script>
+
+</body>
+</html>
